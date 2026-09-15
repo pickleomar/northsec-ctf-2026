@@ -1,0 +1,52 @@
+==============================================================================
+  RECOVERED LAB JOURNAL, Dr. E. Vey
+  Thalassa Synthetics, Project ODYSSEY
+  Fragments recovered from a partially corrupted notebook image.
+  Unreadable sections marked [...]
+==============================================================================
+
+03.28
+Chassis finalized. K12 scaffold. Six genes. Five boring, one loud. The
+trick was not hiding the loud one. The trick was making the boring ones
+unquestionably boring.
+
+04.04
+C. wants to encrypt before embedding. I keep telling him the code is
+already a cipher to anyone who does not speak the language. Every amino
+acid has its favourite spelling in this chassis. We simply choose a
+different one. Same grammar. Different accent.
+
+04.11
+Scheme locked. We only touch redundancies that divide evenly. Where the
+chassis offers exactly two spellings for a residue, or exactly four, we
+spend. Anywhere else we stay silent. Greed is noise.
+
+04.19
+Ordering caused a fight. C. wanted the obvious one, which for him meant
+ranking by how often the chassis picks each spelling. I refused. Adapt
+to the chassis and any competent reader will adapt back. We use a
+different order: the one a dictionary uses. Nothing else. If anyone
+ever decodes this, they will hit the wall we sat at for a week before
+we wrote that sentence down.
+
+04.23
+C. finally agreed to encrypt, on the condition that the key be something
+no outsider could invent. I told him the organism itself is the key.
+Not the noisy one, though. The quiet ones. Read them in the order they
+appear on the chromosome. Each in its own direction, as the ribosome
+would. Concatenate. Hash. Stretch. XOR. The payload travels dressed as
+noise and nobody hears a word of it until you put its clothes back on.
+
+04.27
+Orientation: reverse strand. Not to hide. The truth reads backwards.
+Sentimental. It stays.
+
+05.02
+Final sweep. No headers. No magic bytes. No shape-of-the-flag peeking
+through. Until every step is right, the bytes are indistinguishable
+from anything else random. Trust the process or do not start.
+
+05.09
+Shipping. One organism. One message. No backups.
+
+[...]

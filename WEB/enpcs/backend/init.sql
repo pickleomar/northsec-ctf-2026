@@ -1,0 +1,66 @@
+CREATE TABLE IF NOT EXISTS users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(32) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  bits INT NOT NULL DEFAULT 65,
+  score INT NOT NULL DEFAULT 0,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE TABLE IF NOT EXISTS inventory (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  item_id VARCHAR(32) NOT NULL,
+  quantity INT NOT NULL DEFAULT 0,
+  UNIQUE KEY uq_inventory_user_item (user_id, item_id),
+  CONSTRAINT fk_inventory_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS purchase_log (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  item_id VARCHAR(32) NOT NULL,
+  bits_before INT NOT NULL,
+  bits_after INT NOT NULL,
+  ts TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  KEY idx_purchase_user (user_id),
+  CONSTRAINT fk_purchase_log_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS architect_rewards (
+  user_id INT PRIMARY KEY,
+  granted_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  CONSTRAINT fk_architect_rewards_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS enpc_lessons (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  npc_index TINYINT UNSIGNED NOT NULL,
+  trigger_key VARCHAR(32) NOT NULL,
+  phrase VARCHAR(100) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  UNIQUE KEY uq_enpc_lessons (user_id, npc_index, trigger_key),
+  CONSTRAINT fk_enpc_lessons_user
+    FOREIGN KEY (user_id) REFERENCES users(id)
+    ON DELETE CASCADE
+);
+
+CREATE TABLE IF NOT EXISTS flag (
+  `key` VARCHAR(64) PRIMARY KEY,
+  `value` VARCHAR(255) NOT NULL
+);
+
+INSERT INTO flag (`key`, `value`)
+VALUES ('DJAJA GHSSLAT RJLIHA WNSSAT MAR7bA BIIIIIIIKKKKK', 'NSC{Tet0uan1_g4lss_3La_Lfl4g}')
+ON DUPLICATE KEY UPDATE `value` = VALUES(`value`);
+
+GRANT FILE ON *.* TO 'enpc_user'@'%';
+FLUSH PRIVILEGES;

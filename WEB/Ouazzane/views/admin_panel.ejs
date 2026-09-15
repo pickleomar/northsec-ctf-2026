@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Admin Panel - WARNING: INTERNAL</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Poppins', sans-serif;
+            background-color: #f8f9fa;
+            margin: 0;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            color: #dc3545; /* Bootstrap danger red */
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .content {
+            background: #fff;
+            padding: 20px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        .ssti-area {
+            margin-top: 20px;
+            border: 1px dashed #ffc107; /* Bootstrap warning yellow */
+            padding: 15px;
+            background-color: #fff3cd;
+        }
+        pre {
+            background: #eee;
+            padding: 10px;
+            border-radius: 3px;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+        }
+    </style>
+</head>
+<body>
+    <h1>Admin Control Panel (Restricted Access)</h1>
+    <div class="content">
+        <p>Welcome, Administrator.</p>
+        <p>System Status: All systems nominal.</p>
+        
+        <div class="ssti-area">
+            <h2>Debug Output (Potential SSTI - Do Not Expose User Input Here)</h2>
+            <p>Last Rendered Value:</p>
+            <% 
+                if (typeof someUserInput !== 'undefined') {
+                    debugValue = someUserInput;
+                }
+            %>
+            <pre><%= debugValue %></pre>
+            <p><small>Note: Rendering dynamic content here is sensitive.</small></p>
+        </div>
+
+        <p style="margin-top: 30px; color: grey;">This panel is for internal use ONLY.</p>
+    </div>
+</body>
+</html> 

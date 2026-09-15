@@ -1,0 +1,72 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="generator" content="MOZZ/1.0 (register-arch; seed-fixed)">
+    <!-- skin: 0x5A5A5A5A -->
+    <title>BUZZK1LL</title>
+    <link rel="preload" href="game.wasm" as="fetch" type="application/wasm" crossorigin>
+    <link rel="preload" href="assets/mozz_arch.png" as="image">
+    <link rel="preload" href="assets/flyswatter.png" as="image">
+    <link rel="preload" href="audio/Mosquito%20Sound%20Effect%20.mp3" as="audio">
+    <link rel="preload" href="audio/fly-swatter.mp3" as="audio">
+    <link rel="preload" href="fonts/RegisterMono.ttf" as="font" type="font/ttf" crossorigin>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="shell">
+      <section class="sim">
+        <canvas id="game" width="960" height="600" aria-label="BUZZK1LL simulation"></canvas>
+        <pre id="terminal" class="terminal" hidden></pre>
+        <div id="pause-panel" class="pause-panel" hidden>
+          <p>Different mosquitoes respond to different stimuli. Some prefer to be spared.</p>
+        </div>
+      </section>
+
+      <aside class="side">
+        <div class="brand">
+          <span class="brand-mark">BUZZK1LL</span>
+          <span class="division">NorthSec Biosafety Division</span>
+        </div>
+
+        <dl class="readout">
+          <div>
+            <dt>Score</dt>
+            <dd id="score">000</dd>
+          </div>
+          <div>
+            <dt>Badge</dt>
+            <dd id="badge">Room Clear locked</dd>
+          </div>
+          <div>
+            <dt>Execution state</dt>
+            <dd id="exec-state">IDLE</dd>
+          </div>
+        </dl>
+
+        <div id="message" class="message" aria-live="polite"></div>
+
+        <section class="leaderboard" aria-label="Leaderboard">
+          <h2>Leaderboard</h2>
+          <ol>
+            <li><span>dripctl</span><strong>3840</strong></li>
+            <li><span>sprayteam</span><strong>2400</strong></li>
+            <li><span>you</span><strong id="board-score">000</strong></li>
+          </ol>
+          <button id="submit-score" type="button">Submit</button>
+        </section>
+      </aside>
+    </main>
+
+    <div id="modal" class="modal" hidden>
+      <div class="dialog" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+        <h1 id="modal-title">Room Clear Badge</h1>
+        <p id="modal-text">Eliminated: 50 | Remaining: ? | Execution state: IDLE</p>
+        <button id="modal-button" type="button">Continue</button>
+      </div>
+    </div>
+
+    <script src="game.js"></script>
+  </body>
+</html>

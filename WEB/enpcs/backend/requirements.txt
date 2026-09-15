@@ -1,0 +1,5 @@
+Flask==3.0.3
+bcrypt==4.2.1
+PyJWT==2.10.1
+mysql-connector-python==9.1.0
+gunicorn==23.0.0

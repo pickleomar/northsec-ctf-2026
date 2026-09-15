@@ -1,0 +1,14 @@
+{
+  "challenge": "ColdTap",
+  "captureSet": [
+    "hallway_01.pcapng",
+    "hallway_02.pcapng",
+    "hallway_03.pcapng",
+    "hallway_04.pcapng",
+    "hallway_05.pcapng",
+    "hallway_06.pcapng"
+  ],
+  "flagFormat": "NSC{...}",
+  "flagCiphertext": "0x93517119450be8fbcd18e2a009656a9a0b49cea8b155a78bba05477b0645213bdf8aac593fdd0296e7fc66d4",
+  "note": "The flag blob is offline and does not require a hosted service."
+}

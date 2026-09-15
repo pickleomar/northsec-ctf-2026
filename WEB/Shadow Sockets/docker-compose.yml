@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  shadow-analytics:
+    build: .
+    container_name: shadow_challenge
+    ports:
+      - "5000:5000"
+    restart: always
+    environment:
+      - FLASK_ENV=production
+    # Limit resources to prevent DoS attacks crashing the whole server
+    deploy:
+      resources:
+        limits:
+          cpus: '0.50'
+          memory: 512M
+    networks:
+      - ctf_net
+
+networks:
+  ctf_net:
+    driver: bridge

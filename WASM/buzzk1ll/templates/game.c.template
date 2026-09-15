@@ -1,0 +1,308 @@
+#include <stdint.h>
+
+typedef uint8_t u8;
+typedef uint16_t u16;
+typedef uint32_t u32;
+
+#define DATA_OFFSET 0x1200u
+#define STATE_OFFSET 0x80u
+#define TARGET_OFFSET 0xA0u
+#define FLAG_OFFSET 0xC0u
+#define FLAG_OUT_OFFSET 0xE00u
+#define FLAG_LEN 128u
+#define SENTINEL_ADDR 0xFFFFu
+
+#define MEANINGFUL 0x8000u
+#define ACT_HOVER 0u
+#define ACT_CLICK 1u
+#define ACT_MISS 2u
+
+#define OP_MOV 0u
+#define OP_ADD 1u
+#define OP_XOR 2u
+#define OP_ROT 3u
+
+#define NOP(hi, lo) ((((u32)(hi)) << 16) | ((lo) & 0x7fffu))
+#define INSN(hi, rd, op, act, imm) \
+    ((((u32)(hi)) << 16) | MEANINGFUL | (((act) & 3u) << 13) | (((op) & 3u) << 11) | (((rd) & 7u) << 8) | ((imm) & 0xffu))
+
+/*
+ * Linked with --global-base=0x1200, so this block is deliberately placed at
+ * the memory address described in the challenge brief. The first 40 words are
+ * the mosquito physics/instruction table. Offsets 0x1280 and 0x12a0 are used
+ * as the register state and scrambled target bytes respectively; the 0x1280
+ * state block intentionally aliases two late NOP table entries.
+ */
+__attribute__((used, aligned(16)))
+static u32 mozz_data[80] = {
+    [0] = NOP(0x3f81, 0x0311),
+    [1] = NOP(0x3f85, 0x1022),
+    [2] = INSN(0x3f92, 0, OP_MOV, ACT_CLICK, 0xad),
+    [3] = NOP(0x3f88, 0x2101),
+    [4] = NOP(0x3f82, 0x3a04),
+    [5] = INSN(0x3fa5, 1, OP_ADD, ACT_CLICK, 0xde),
+    [6] = NOP(0x3f8b, 0x0630),
+    [7] = NOP(0x3f9d, 0x3415),
+    [8] = NOP(0x3f86, 0x0990),
+    [9] = NOP(0x3f8c, 0x1288),
+    [10] = NOP(0x3f94, 0x0c44),
+    [11] = INSN(0x3fb1, 2, OP_XOR, ACT_CLICK, 0xbe),
+    [12] = NOP(0x3f84, 0x5110),
+    [13] = NOP(0x3f89, 0x0921),
+    [14] = NOP(0x3f97, 0x4a31),
+    [15] = NOP(0x3f83, 0x091c),
+    [16] = NOP(0x3f8f, 0x2608),
+    [17] = INSN(0x3fc2, 3, OP_MOV, ACT_MISS, 0xef),
+    [18] = NOP(0x3f8a, 0x3838),
+    [19] = NOP(0x3f91, 0x1701),
+    [20] = NOP(0x3f86, 0x2202),
+    [21] = NOP(0x3f99, 0x1f11),
+    [22] = NOP(0x3f87, 0x4803),
+    [23] = INSN(0x3fd3, 4, OP_ADD, ACT_CLICK, 0x13),
+    [24] = NOP(0x3f95, 0x0209),
+    [25] = NOP(0x3f8d, 0x1220),
+    [26] = NOP(0x3f90, 0x3402),
+    [27] = NOP(0x3f8e, 0x2a01),
+    [28] = NOP(0x3f98, 0x0d42),
+    [29] = INSN(0x3fe4, 5, OP_XOR, ACT_CLICK, 0x37),
+    [30] = NOP(0x3f8a, 0x3301),
+    [31] = NOP(0x3f9a, 0x7a10),
+    [32] = 0x00000000u,
+    [33] = 0x00000000u,
+    [34] = INSN(0x3fc6, 6, OP_MOV, ACT_MISS, 0xca),
+    [35] = NOP(0x3f8c, 0x1908),
+    [36] = NOP(0x3f9c, 0x0666),
+    [37] = NOP(0x3f87, 0x4501),
+    [38] = INSN(0x3ff7, 7, OP_ADD, ACT_CLICK, 0xfe),
+    [39] = NOP(0x3f81, 0x3920),
+
+    /* 0x12a0: AD DE BE EF 13 37 CA FE, XOR-scrambled with 0x5a. */
+    [40] = 0xb5e484f7u,
+    [41] = 0xa4906d49u,
+    [42] = 0x4e534300u,
+    [43] = 0x5a5a5a5au,
+
+    /* 0x12c0: encrypted flag, generated at container startup. */
+__FLAG_WORDS__
+};
+
+typedef u32 (*eval_fn)(u32 packed, u32 action, u32 id);
+
+static eval_fn eval_slots[4];
+static u8 fired[40];
+static u32 frame_counter;
+static u32 score_counter;
+static u32 fake_win_latched;
+static u32 protocol_step;
+
+static inline volatile u8 *mem8(u32 offset) {
+    return (volatile u8 *)(uintptr_t)offset;
+}
+
+static inline volatile u32 *table(void) {
+    return (volatile u32 *)(uintptr_t)DATA_OFFSET;
+}
+
+static inline volatile u8 *state(void) {
+    return (volatile u8 *)(uintptr_t)(DATA_OFFSET + STATE_OFFSET);
+}
+
+static inline volatile u8 *target(void) {
+    return (volatile u8 *)(uintptr_t)(DATA_OFFSET + TARGET_OFFSET);
+}
+
+static u32 is_key_id(u32 id) {
+    return id == 2u || id == 5u || id == 11u || id == 17u ||
+           id == 23u || id == 29u || id == 34u || id == 38u;
+}
+
+static u32 expected_id(u32 step) {
+    switch (step) {
+    case 0: return 2u;
+    case 1: return 5u;
+    case 2: return 11u;
+    case 3: return 17u;
+    case 4: return 23u;
+    case 5: return 29u;
+    case 6: return 34u;
+    case 7: return 38u;
+    default: return 0xffffffffu;
+    }
+}
+
+static u32 window_open(u32 id) {
+    switch (id) {
+    case 2: return 180u;
+    case 5: return 420u;
+    case 11: return 780u;
+    case 17: return 1140u;
+    case 23: return 1500u;
+    case 29: return 1860u;
+    case 34: return 2220u;
+    case 38: return 2580u;
+    default: return 0xffffffffu;
+    }
+}
+
+static void protocol_reset(void) {
+    volatile u8 *r = state();
+    for (u32 i = 0; i < 8u; i++) {
+        r[i] = 0u;
+    }
+    for (u32 i = 0; i < 40u; i++) {
+        fired[i] = 0u;
+    }
+    volatile u8 *out = (volatile u8 *)(uintptr_t)(DATA_OFFSET + FLAG_OUT_OFFSET);
+    for (u32 i = 0; i < FLAG_LEN; i++) {
+        out[i] = 0u;
+    }
+    protocol_step = 0u;
+    *mem8(SENTINEL_ADDR) = 0u;
+}
+
+static u32 z_check(void) {
+    volatile u8 *r = state();
+    volatile u8 *t = target();
+    for (u32 i = 0; i < 8u; i++) {
+        if (r[i] != (u8)(t[i] ^ 0x5au)) {
+            return 0u;
+        }
+    }
+
+    volatile u8 *flag = (volatile u8 *)(uintptr_t)(DATA_OFFSET + FLAG_OFFSET);
+    volatile u8 *out = (volatile u8 *)(uintptr_t)(DATA_OFFSET + FLAG_OUT_OFFSET);
+    for (u32 i = 0; i < FLAG_LEN; i++) {
+        out[i] = (u8)(flag[i] ^ (u8)((0x23u + i * 17u) & 0xffu));
+    }
+    *mem8(SENTINEL_ADDR) = 0xb7u;
+    return 1u;
+}
+
+static u8 rotl8(u8 value, u32 count) {
+    count &= 7u;
+    return (u8)((value << count) | (value >> ((8u - count) & 7u)));
+}
+
+__attribute__((noinline))
+static u32 z_decoy(u32 packed, u32 action, u32 id) {
+    (void)packed;
+    (void)id;
+    return action == ACT_HOVER ? 0x220u : 0u;
+}
+
+__attribute__((noinline))
+static u32 z_eval(u32 packed, u32 action, u32 id) {
+    if (!is_key_id(id) || ((packed & MEANINGFUL) == 0u)) {
+        return action == ACT_HOVER ? 0x40u : 0u;
+    }
+
+    if (action == ACT_HOVER) {
+        return 0x880u;
+    }
+
+    u32 open = window_open(id);
+    if (frame_counter < open || frame_counter > open + 240u) {
+        return 0u;
+    }
+
+    if (fired[id] != 0u) {
+        return 0u;
+    }
+
+    u32 required_action = (packed >> 13) & 3u;
+    if (required_action != action || expected_id(protocol_step) != id) {
+        protocol_reset();
+        return 0u;
+    }
+
+    u32 rd = (packed >> 8) & 7u;
+    u32 op = (packed >> 11) & 3u;
+    u8 imm = (u8)(packed & 0xffu);
+    volatile u8 *r = state();
+
+    switch (op) {
+    case OP_MOV:
+        r[rd] = imm;
+        break;
+    case OP_ADD:
+        r[rd] = (u8)(r[rd] + imm);
+        break;
+    case OP_XOR:
+        r[rd] = (u8)(r[rd] ^ imm);
+        break;
+    case OP_ROT:
+        r[rd] = rotl8(r[rd], imm);
+        break;
+    }
+
+    fired[id] = 1u;
+    protocol_step++;
+    return z_check() ? 0xb700u : 0x5100u | protocol_step;
+}
+
+static u32 dispatch(u32 id, u32 action) {
+    if (id >= 40u) {
+        return 0u;
+    }
+
+    u32 packed = table()[id];
+    u32 slot = ((packed >> 28) ^ id ^ 0x3u) & 3u;
+    if (is_key_id(id)) {
+        slot = (slot | 1u) & 3u;
+    }
+    return eval_slots[slot](packed, action, id);
+}
+
+__attribute__((export_name("reset_machine")))
+void reset_machine(void) {
+    eval_slots[0] = z_decoy;
+    eval_slots[1] = z_eval;
+    eval_slots[2] = z_decoy;
+    eval_slots[3] = z_eval;
+    frame_counter = 0u;
+    score_counter = 0u;
+    fake_win_latched = 0u;
+    protocol_reset();
+}
+
+__attribute__((export_name("tick")))
+u32 tick(void) {
+    frame_counter++;
+    return frame_counter;
+}
+
+__attribute__((export_name("on_hover")))
+u32 on_hover(u32 id) {
+    return dispatch(id, ACT_HOVER);
+}
+
+__attribute__((export_name("on_click")))
+u32 on_click(u32 id) {
+    if (id < 40u) {
+        score_counter++;
+    }
+    return dispatch(id, ACT_CLICK);
+}
+
+__attribute__((export_name("on_miss")))
+u32 on_miss(u32 id) {
+    return dispatch(id, ACT_MISS);
+}
+
+__attribute__((export_name("get_score")))
+u32 get_score(void) {
+    return score_counter;
+}
+
+__attribute__((export_name("check_win")))
+u32 check_win(void) {
+    if (*mem8(SENTINEL_ADDR) == 0xb7u) {
+        return 0u;
+    }
+
+    if (!fake_win_latched && (score_counter >= 50u || frame_counter >= 3840u)) {
+        fake_win_latched = 1u;
+        protocol_reset();
+    }
+    return fake_win_latched;
+}

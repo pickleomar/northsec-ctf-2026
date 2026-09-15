@@ -1,0 +1,7 @@
+Flask==3.0.0
+flask-sock==0.7.0
+flask-limiter==3.5.0
+websocket-client==1.7.0
+colorama==0.4.6
+requests==2.31.0
+Pillow==10.1.0

@@ -1,0 +1,10 @@
+services:
+  cold-chain:
+    build: .
+    ports:
+      - "31337:31337"
+    environment:
+      COLD_CHAIN_PORT: "31337"
+      COLD_CHAIN_FLAG_SECRET: "change-me-in-production"
+    restart: unless-stopped
+

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}Home{% endblock %}
+
+{% block content %}
+<div id="posts">
+    {% for post in posts %}
+    <div class="card border-dark mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <div>
+                <strong>Author:</strong> <a href="/users/{{ post.author.id }}">{{ post.author.name }}</a>
+            </div>
+            {% if post.author.id == current_user.id %}
+            <div class="d-flex">
+                <form action="{{ url_for('views.delete_post', post_id=post.id) }}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-danger me-2">Delete Post</button>
+                </form>
+                <a href="{{ url_for('views.edit_post', post_id=post.id) }}" class="btn btn-warning" style="margin-left: 10px;">Edit Post</a>
+            </div>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            <strong>Title:</strong> {{ post.title }}<br>
+            <strong>Content:</strong> {{ post.content }}<br>
+            <strong>Date:</strong> {{ post.date.strftime('%Y-%m-%d %H:%M:%S') }}
+        </div>
+        <div class="card-footer text-muted">
+            <div class="d-flex align-items-center">
+                <button class="btn btn-info me-3" onclick="toggleComments('{{ post.id }}')" style="margin-top: 5px; margin-bottom: 5px;">Show Comments</button>
+                <div style="margin-left: 10px">
+                    {{ post.likes|length }}
+                </div>
+                <form method="POST" action="{{ url_for('views.like_post', post_id=post.id) }}" style="display: inline;">
+                    <button type="submit" style="border: none; background: none; cursor: pointer;">
+                        <i class="fas fa-thumbs-up" style="font-size: 24px; color: #007bff; margin-left: 10px;"></i>
+                    </button>
+                </form>
+            </div>
+            <div id="comments-{{ post.id }}" style="display: none;">
+                {% for comment in post.comments %}
+                <div class="comment mb-3 p-3 border rounded">
+                    <div class="d-flex justify-content-between align-items-start">
+                        <div>
+                            <span class="commentator-label"><strong>Commentator:</strong></span>
+                            <span class="commentator-name" style="margin-left: 5px;"><a href="/users/{{ comment.commentator.id }}">{{ comment.commentator.name }}</a></span>
+                        </div>
+                        {% if comment.commentator.id == current_user.id %}
+                        <form action="{{ url_for('views.delete_comment', comment_id=comment.id) }}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete Comment</button>
+                        </form>
+                        {% endif %}
+                    </div>
+                    <div>
+                        <span><strong>Date:</strong> {{ comment.date.strftime('%Y-%m-%d %H:%M:%S') }}</span>
+                    </div>
+                    <p class="mt-2">{{ comment.content }}</p>
+                </div>
+                {% endfor %}
+                <form method="POST" action="{{ url_for('views.commenting', post_id=post.id) }}">
+                    <div class="form-group">
+                        <input
+                                type="text"
+                                class="form-control"
+                                id="comment_content_{{ post.id }}"
+                                name="comment_content"
+                                placeholder="Comment ..."
+                        />
+                    </div>
+                    <button type="submit" class="btn btn-primary">Submit</button>
+                </form>
+            </div>
+        </div>
+    </div>
+    {% endfor %}
+</div>
+<div class="fixed-bottom d-flex justify-content-end p-3">
+    <a href="/posting" class="btn btn-success btn-lg" style="margin-right: 10px; margin-left: 10px">Create Post</a>
+</div>
+
+<script>
+    function toggleComments(postId) {
+        var commentsDiv = document.getElementById('comments-' + postId);
+        if (commentsDiv.style.display === 'none') {
+            commentsDiv.style.display = 'block';
+        } else {
+            commentsDiv.style.display = 'none';
+        }
+    }
+</script>
+{% endblock %}

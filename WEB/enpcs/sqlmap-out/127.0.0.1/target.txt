@@ -1,0 +1,3 @@
+http://127.0.0.1:3000/api/architect/lessons (POST)  # /usr/bin/sqlmap -r req.txt -v 6 --flush-session --batch --output-dir=./sqlmap-out --level=5 --risk=3
+
+{"npc_index":7,"trigger":"drink_drink","phrase":"*"}

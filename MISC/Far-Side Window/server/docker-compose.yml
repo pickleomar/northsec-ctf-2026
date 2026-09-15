@@ -1,0 +1,10 @@
+services:
+  far-side-window:
+    build: .
+    container_name: far-side-window
+    ports:
+      - "31337:31337"
+    environment:
+      PORT: "31337"
+      FLAG: "${FLAG}"
+    restart: unless-stopped

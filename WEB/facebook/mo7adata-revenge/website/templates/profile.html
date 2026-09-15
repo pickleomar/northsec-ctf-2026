@@ -1,0 +1,81 @@
+{% extends "base.html" %}
+
+{% block title %}Profile{% endblock %}
+
+{% block content %}
+
+<!-- Profile Header -->
+<div class="profile-header text-center py-5 bg-light">
+    <h1 class="display-4">{{ user_profile.name }}</h1>
+    <p class="lead">{{ user_profile.description }}</p>
+</div>
+
+<!-- Profile Picture -->
+<div class="text-center my-4">
+    <img id="profilePicture" src="" alt="Profile Picture" class="img-thumbnail rounded-circle" width="200" height="200">
+</div>
+
+<!-- Portfolio Section -->
+<div class="container my-5">
+    <h2 class="text-center mb-4">{{ user_profile.name }}'s Portfolio</h2>
+
+    <!-- Portfolio Content -->
+    <div class="row">
+        {% for post in posts %}
+        <div class="col-md-6 mb-4">
+            <div class="card h-100 shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <strong>Author:</strong> {{ post.author.name }}
+                </div>
+                <div class="card-body">
+                    <h5 class="card-title">{{ post.title }}</h5>
+                    <p class="card-text"><strong>Theme:</strong> {{ post.theme }}</p>
+                    <p class="card-text">{{ post.content }}</p>
+                </div>
+                <div class="card-footer text-muted">
+                    <strong>Date:</strong> {{ post.date.strftime('%Y-%m-%d %H:%M:%S') }}
+                    {% if post.author.id == current_user.id %}
+                    <div class="d-flex justify-content-end mt-2">
+                        <a href="{{ url_for('views.edit_post', post_id=post.id) }}" class="btn btn-warning btn-sm me-2">Edit</a>
+                        <form action="{{ url_for('views.delete_post', post_id=post.id) }}" method="post" style="display:inline;">
+                            <button type="submit" class="btn btn-danger btn-sm">Delete</button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- Home Button -->
+<div class="fixed-bottom d-flex justify-content-start p-3">
+    <a href="/home" class="btn btn-success btn-lg">Home</a>
+</div>
+
+<!-- JavaScript to load the profile picture -->
+<script>
+    function loadProfilePicture() {
+        // Get the profile picture file name from the template
+        const profilePic = "{{ user_profile.pic }}";
+
+        if (!profilePic) {
+            console.error('No profile picture found for this user.');
+            return;
+        }
+
+        // Construct the URL for the profile picture
+        const imageUrl = `/static/uploads/${profilePic}`;
+
+        // Set the src attribute of the image element
+        document.getElementById('profilePicture').src = imageUrl;
+    }
+
+    // Automatically load the profile picture when the page loads
+    loadProfilePicture();
+</script>
+
+
+
+{% endblock %}

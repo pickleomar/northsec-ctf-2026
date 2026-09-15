@@ -1,0 +1,28 @@
+services:
+  cpp:
+    build: .
+    ports:
+      - "1337:1337"
+    restart: unless-stopped
+    tmpfs:
+      - /tmp
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 256M
+    security_opt:
+      - seccomp:unconfined
+    cap_drop:
+      - ALL
+    cap_add:
+      - SYS_ADMIN    # nsjail: mount/pid/uts/ipc namespaces
+      - SYS_PTRACE   # nsjail: pid namespace
+      - SETUID       # nsjail: drop to ctf user inside jail
+      - SETGID       # nsjail: drop to ctf group inside jail
+      - SETPCAP      # nsjail: prctl(PR_SET_SECUREBITS) to lock capabilities after uid drop
+    ulimits:
+      nproc: 128
+      nofile:
+        soft: 256
+        hard: 512

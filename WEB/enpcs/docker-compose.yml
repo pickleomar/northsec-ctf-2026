@@ -1,0 +1,43 @@
+services:
+  db:
+    image: mysql:8.0
+    command: ["--secure-file-priv="]
+    environment:
+      MYSQL_DATABASE: enpc_game
+      MYSQL_USER: enpc_user
+      MYSQL_PASSWORD: enpc_pass
+      MYSQL_ROOT_PASSWORD: root_secret
+      MYSQL_ROOT_HOST: "%"
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-uroot", "-proot_secret"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: enpc_game
+      DB_USER: enpc_user
+      DB_PASS: enpc_pass
+      DB_ADMIN_USER: root
+      DB_ADMIN_PASS: root_secret
+      JWT_SECRET: labalenasegenahawalamesslamakansyon
+      PORT: 3000
+    ports:
+      - "3000:3000"
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  db_data:

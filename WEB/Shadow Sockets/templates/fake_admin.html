@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shadow Analytics - Admin Terminal</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Courier New', monospace;
+            background: #0a0a0a;
+            color: #00ff00;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow-x: hidden;
+        }
+        
+        .terminal {
+            width: 90%;
+            max-width: 800px;
+            background: #1a1a1a;
+            border: 2px solid #00ff00;
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 0 50px rgba(0, 255, 0, 0.2);
+            position: relative;
+            z-index: 10;
+        }
+        
+        .terminal-header {
+            border-bottom: 1px solid #00ff00;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .terminal-title {
+            font-size: 16px;
+            font-weight: bold;
+            letter-spacing: 1px;
+        }
+        
+        .terminal-controls {
+            display: flex;
+            gap: 8px;
+        }
+        
+        .control-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        
+        .control-btn.red { background: #ff5f56; }
+        .control-btn.yellow { background: #ffbd2e; }
+        .control-btn.green { background: #27c93f; }
+        
+        .terminal-content {
+            line-height: 1.6;
+            min-height: 400px;
+        }
+        
+        .line {
+            margin: 5px 0;
+            word-wrap: break-word;
+        }
+        
+        .prompt { color: #0080ff; }
+        .error { color: #ff4444; }
+        .warning { color: #ffaa00; }
+        .success { color: #00ff00; }
+        .system { color: #ff00ff; }
+        
+        .blink {
+            animation: blink 1s infinite;
+        }
+        
+        @keyframes blink {
+            0%, 50% { opacity: 1; }
+            51%, 100% { opacity: 0; }
+        }
+        
+        .login-form {
+            margin-top: 20px;
+            padding: 20px;
+            background: #0d0d0d;
+            border: 1px solid #333;
+            border-left: 3px solid #00ff00;
+        }
+        
+        .form-group {
+            margin: 15px 0;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            color: #00ff00;
+            font-size: 12px;
+        }
+        
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            background: #000;
+            border: 1px solid #333;
+            color: #00ff00;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .form-group input:focus {
+            outline: none;
+            border-color: #00ff00;
+            box-shadow: 0 0 5px rgba(0, 255, 0, 0.3);
+        }
+        
+        button {
+            background: #00ff00;
+            color: #000;
+            border: none;
+            padding: 10px 20px;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-transform: uppercase;
+        }
+        
+        button:hover {
+            background: #00cc00;
+            box-shadow: 0 0 15px rgba(0, 255, 0, 0.7);
+        }
+        
+        .flag-box {
+            margin-top: 20px;
+            padding: 15px;
+            background: rgba(255, 0, 0, 0.1);
+            border: 2px solid #ff4444;
+            color: #ff4444;
+            font-weight: bold;
+            text-align: center;
+            animation: glitch 0.3s infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0) }
+            20% { transform: translate(-2px, 2px) }
+            40% { transform: translate(-2px, -2px) }
+            60% { transform: translate(2px, 2px) }
+            80% { transform: translate(2px, -2px) }
+            100% { transform: translate(0) }
+        }
+        
+        .ascii-art {
+            font-size: 10px;
+            line-height: 1.2;
+            color: #00ff00;
+            opacity: 0.5;
+            white-space: pre;
+            margin-bottom: 20px;
+        }
+
+        /* DELTA KILLER SIGNATURE - TERMINAL STYLE */
+        .delta-sig {
+            position: fixed;
+            bottom: 10px;
+            right: 10px;
+            font-family: 'Courier New', monospace;
+            color: #333;
+            font-size: 12px;
+            opacity: 0.6;
+            z-index: 5;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="terminal">
+        <div class="terminal-header">
+            <div class="terminal-title">SHADOW ANALYTICS :: ROOT ACCESS</div>
+            <div class="terminal-controls">
+                <div class="control-btn red"></div>
+                <div class="control-btn yellow"></div>
+                <div class="control-btn green"></div>
+            </div>
+        </div>
+        
+        <div class="terminal-content" id="console">
+            <div class="ascii-art">
+   _____ __              __               
+  / ___// /_  ____ _____/ /___ _      __
+  \__ \/ __ \/ __ `/ __  / __ \ | /| / /
+ ___/ / / / / /_/ / /_/ / /_/ / |/ |/ / 
+/____/_/ /_/\__,_/\__,_/\____/|__/|__/  
+            </div>
+            
+            <div class="line"><span class="prompt">[SYSTEM]</span> Initializing secure shell...</div>
+            <div class="line"><span class="success">[OK]</span> Connection established ({{ request.remote_addr }})</div>
+            <div class="line"><span class="system">[KERNEL]</span> Delta_Killer Signature Detected in memory heap.</div>
+            
+            {% if message %}
+            <div class="line"><span class="error">[ACCESS]</span> {{ message }}</div>
+            {% endif %}
+
+            {% if fake_flag %}
+            <div class="flag-box">
+                <div>⚠️ ACCESS GRANTED (SIMULATION MODE) ⚠️</div>
+                <br>
+                <div>{{ fake_flag }}</div>
+            </div>
+            {% endif %}
+            
+            <div class="login-form" id="loginBox">
+                <div class="line warning">⚠️ RESTRICTED AREA: AUTHORIZED PERSONNEL ONLY</div>
+                
+                <form id="adminForm">
+                    <div class="form-group">
+                        <label for="username">USER:</label>
+                        <input type="text" id="username" name="username" placeholder="root" autocomplete="off">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">PASS:</label>
+                        <input type="password" id="password" name="password" placeholder="••••••••">
+                    </div>
+                    
+                    <button type="submit">AUTHENTICATE</button>
+                </form>
+            </div>
+
+            <div id="outputArea"></div>
+            
+            <div class="line" style="margin-top: 30px;">
+                <span class="prompt">guest@shadow-4ng3l3y35:~$</span> <span class="blink">_</span>
+            </div>
+        </div>
+    </div>
+
+    <div class="delta-sig">_// Delta_Killer | Greetz: Angel Eyes</div>
+    
+    <script>
+        const form = document.getElementById('adminForm');
+        const loginBox = document.getElementById('loginBox');
+        const outputArea = document.getElementById('outputArea');
+        const terminalContent = document.getElementById('console');
+
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // 1. Hide the form to make it look like processing
+            loginBox.style.opacity = '0.5';
+            loginBox.style.pointerEvents = 'none';
+            
+            // 2. Add processing lines
+            const lines = [
+                '<span class="prompt">[AUTH]</span> Handshake initiated...',
+                '<span class="prompt">[AUTH]</span> Encrypting payload...',
+                '<span class="warning">[WARN]</span> Legacy protocol detected (HTTP)',
+                '<span class="prompt">[AUTH]</span> Validating credentials...'
+            ];
+            
+            let i = 0;
+            const interval = setInterval(() => {
+                if (i < lines.length) {
+                    const line = document.createElement('div');
+                    line.className = 'line';
+                    line.innerHTML = lines[i];
+                    outputArea.appendChild(line);
+                    i++;
+                    // Auto scroll
+                    terminalContent.scrollTop = terminalContent.scrollHeight;
+                } else {
+                    clearInterval(interval);
+                    sendLogin();
+                }
+            }, 400);
+        });
+
+        function sendLogin() {
+            const formData = new FormData(form);
+            
+            fetch('/admin/login', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Remove the "Validating" lines visually by clearing or appending new result
+                
+                const resultLine = document.createElement('div');
+                resultLine.className = 'line';
+                resultLine.style.marginTop = '20px';
+
+                if (data.success) {
+                    // This won't happen in your code, but just in case
+                    resultLine.innerHTML = `<span class="success">[SUCCESS]</span> ${data.message}`;
+                } else {
+                    // ROAST THE PLAYER
+                    resultLine.innerHTML = `<span class="error">[FATAL]</span> ${data.message}`;
+                    
+                    // IF THERE IS A FLAG (The Roast Flag), Show it nicely
+                    if (data.flag) {
+                        const flagDiv = document.createElement('div');
+                        flagDiv.className = 'flag-box';
+                        flagDiv.innerHTML = `
+                            <div>⚠️ SECURITY ALERT ⚠️</div>
+                            <div style="margin: 10px 0; color: #fff;">${data.flag}</div>
+                            <div style="font-size: 10px;">Incident reported to Delta_Killer</div>
+                        `;
+                        outputArea.appendChild(flagDiv);
+                    }
+                }
+                
+                outputArea.appendChild(resultLine);
+                
+                // Re-enable form after a delay so they can try getting roasted again
+                setTimeout(() => {
+                    loginBox.style.opacity = '1';
+                    loginBox.style.pointerEvents = 'all';
+                    document.getElementById('password').value = '';
+                }, 2000);
+                
+                terminalContent.scrollTop = terminalContent.scrollHeight;
+            })
+            .catch(err => {
+                outputArea.innerHTML += `<div class="line error">[ERR] Connection dropped. Server might be laughing at you.</div>`;
+            });
+        }
+        
+        console.log('%c[SYSTEM] Terminal loaded.', 'color: #00ff00');
+        console.log('%c[SIGNATURE] Delta_Killer was here.', 'color: #ff0000; font-weight: bold;');
+    </script>
+</body>
+</html>

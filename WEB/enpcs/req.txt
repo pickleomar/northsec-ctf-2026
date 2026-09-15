@@ -1,0 +1,6 @@
+POST /api/architect/lessons HTTP/1.1
+Host: 127.0.0.1:3000
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiIzIiwidXNlcm5hbWUiOiJtb2todGFyaTkiLCJpYXQiOjE3ODk0MjkwNjIsImV4cCI6MTc5MDAzMzg2Mn0.spBR9goIoufzBf-KYw0XNMYnf5Xryt58DpQ61lwqNAM
+Content-Type: application/json
+
+{"npc_index":7,"trigger":"drink_drink","phrase":"*"}

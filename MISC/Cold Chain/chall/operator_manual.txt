@@ -1,0 +1,103 @@
+Cold Chain Diagnostic Console
+Warehouse Operations Extract
+
+This document is the public operator handoff for the simulated refrigerated
+warehouse. It intentionally describes the diagnostic interface, not the lost
+routing table.
+
+Units
+-----
+
+All times are integer controller ticks. Travel latency, switch response,
+cooldown, scanner cycle, release times, and crate deadlines are reported in
+ticks. Thermal drift and cooling load are integer accounting units used by the
+simulator.
+
+Briefing Fields
+---------------
+
+NODE <name> kind=<kind> cap=<n> heat=<n> cool=<n> tag=<hex>
+  cap is the maximum number of crates that may occupy the node at once.
+  heat is the per-tick thermal drift while waiting at the node.
+  cool is the per-tick cooling load while waiting at the node.
+  tag is the barcode alias emitted by nearby diagnostic receivers.
+
+JUNCTION <name> states=<state,...> initial=<state>
+  Junctions require switch grants before gated downstream moves. Switch commands
+  have response latency and cooldown. A response sample may jitter by one tick;
+  repeated valid samples are intended to be combined.
+
+SCANNER cycle=<n> window=<n>
+  Scanner gates accept reads when the corrected scanner tick falls inside the
+  window beginning at zero. Desynchronized schedules are rejected.
+
+Calibration Commands
+--------------------
+
+PULSE <node>
+  Injects a low-energy tracer at a node. Downstream receivers may report
+  delayed hits. Valid RX rows include sensor id, destination tag, travel delta,
+  required switch state or OPEN, scanner lag, energy, heat, cooling, quality,
+  and a checksum-like field. Some rows are marked ok=0 and should not be used.
+
+ROUTE <src> <dst>
+  Requests a controller route probe. The result is intentionally summarized:
+  ETA range, a few sensors, and checksum-like fields. It is useful as a sanity
+  check, not as a replacement for graph reconstruction.
+
+SCAN <sensor>
+  Reads a scanner clock diagnostic. Valid frames include an epoch reading and
+  sensor skew. Dropped frames are marked ok=0. The scanner epoch is stable for
+  the whole session.
+
+TEMP <crate>
+  Returns crate entry, exit, release tick, deadline, thermal budget,
+  sensitivity, and barcode fragments. Barcode fragments include parity fields
+  because real warehouse labels are not always read in one piece.
+
+SWITCH <junction> <state>
+  Runs a dry switch diagnostic. Valid ACK rows include response and cooldown
+  samples. Response and cooldown samples may jitter by one tick.
+
+Schedule Syntax
+---------------
+
+BEGIN
+SYNC <phase>
+<time> CRATE <id> ENTER <entry>
+<time> SWITCH <junction> <state>
+<time> CRATE <id> MOVE <downstream_node>
+<time> CRATE <id> EXIT <exit>
+END
+
+The verifier sorts events by time. A MOVE line names the next node, not the
+current node. The crate arrives after the calibrated travel latency.
+
+Known Quirks
+------------
+
+Scanner receivers occasionally emit a dropped packet with plausible-looking
+fields and ok=0. Do not average dropped rows.
+
+PULSE travel deltas are deliberately noisy by one tick. The actual conveyor
+latency is recoverable from the valid repeated samples.
+
+Switch response and cooldown diagnostics are dry-run samples. They do not alter
+the submitted schedule; only SWITCH lines inside the final schedule do.
+
+Safety Constraints
+------------------
+
+The verifier rejects:
+
+COLLISION AT T=...
+SWITCH COOLDOWN VIOLATION
+SWITCH STATE VIOLATION
+CRATE EXPIRED
+ENERGY LIMIT EXCEEDED
+COOLING LIMIT EXCEEDED
+SENSOR DESYNC
+SCHEDULE FORMAT ERROR
+
+There is no real-time race. The schedule is checked after submission.
+

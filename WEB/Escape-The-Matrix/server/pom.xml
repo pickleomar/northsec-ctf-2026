@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+xsi:schemaLocation="http://maven.apache.org/POM/4.0.0
+                             https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<modelVersion>4.0.0</modelVersion>
+<parent>
+<groupId>org.springframework.boot</groupId>
+<artifactId>spring-boot-starter-parent</artifactId>
+<version>2.6.0</version>
+<relativePath/>
+</parent>
+<groupId>com.example</groupId>
+<artifactId>ctf</artifactId>
+<version>0.0.1-SNAPSHOT</version>
+<name>SandwishPicnic</name>
+<description>Log4j CVE-2021-44228 CTF Challenge</description>
+<!--  FORCE JAVA 8 BYTECODE -->
+<properties>
+<java.version>8</java.version>
+<maven.compiler.source>1.8</maven.compiler.source>
+<maven.compiler.target>1.8</maven.compiler.target>
+</properties>
+<dependencies>
+<!-- Spring Web WITHOUT default logging -->
+<dependency>
+<groupId>org.springframework.boot</groupId>
+<artifactId>spring-boot-starter-web</artifactId>
+<exclusions>
+<exclusion>
+<groupId>org.springframework.boot</groupId>
+<artifactId>spring-boot-starter-logging</artifactId>
+</exclusion>
+</exclusions>
+</dependency>
+<!--  VULNERABLE LOG4J -->
+<dependency>
+<groupId>org.apache.logging.log4j</groupId>
+<artifactId>log4j-core</artifactId>
+<version>2.14.1</version>
+</dependency>
+<dependency>
+<groupId>org.apache.logging.log4j</groupId>
+<artifactId>log4j-api</artifactId>
+<version>2.14.1</version>
+</dependency>
+<dependency>
+<groupId>org.apache.logging.log4j</groupId>
+<artifactId>log4j-slf4j-impl</artifactId>
+<version>2.14.1</version>
+</dependency>
+<!-- Tests -->
+<dependency>
+<groupId>org.springframework.boot</groupId>
+<artifactId>spring-boot-starter-test</artifactId>
+<scope>test</scope>
+</dependency>
+</dependencies>
+<build>
+<plugins>
+<!-- HARD LOCK JAVA 8 (even on Java 21) -->
+<plugin>
+<groupId>org.apache.maven.plugins</groupId>
+<artifactId>maven-compiler-plugin</artifactId>
+<version>3.11.0</version>
+<configuration>
+<source>1.8</source>
+<target>1.8</target>
+</configuration>
+</plugin>
+<!--  VULNERABLE JVM CONFIG -->
+<plugin>
+<groupId>org.springframework.boot</groupId>
+<artifactId>spring-boot-maven-plugin</artifactId>
+<configuration>
+<jvmArguments>
+                        -Dlog4j2.formatMsgNoLookups=false
+                        -Dcom.sun.jndi.ldap.object.trustURLCodebase=true
+                        -Dcom.sun.jndi.rmi.object.trustURLCodebase=true
+                        -Dlog4j2.enableJndi=true
+</jvmArguments>
+</configuration>
+</plugin>
+</plugins>
+</build>
+</project>

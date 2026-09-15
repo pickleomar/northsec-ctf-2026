@@ -1,0 +1,10 @@
+services:
+  buzzk1ll:
+    build: .
+    ports:
+      - "${HOST_PORT}:31337"
+    environment:
+      PORT: "31337"
+      FLAG: "${FLAG}"
+      TEAM_ID: "${TEAM_ID}"
+      INSTANCE_ID: "${INSTANCE_ID}"

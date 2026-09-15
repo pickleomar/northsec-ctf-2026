@@ -1,0 +1,14 @@
+LRS-7 integration bench notes
+--------------------------------
+- dump starts on TM transfer-frame boundaries
+- RS/FEC already stripped, no CADU cleanup required
+- VC1 carries housekeeping and command audit traffic
+- current image is SIM-REL-3, not the full flight command auth stack
+- SIM-REL-3 auth shortcut:
+  TAG = CRC16/X25(session_nonce || tc_header_and_data || auth_seed)
+- recovery procedure for this load is CLR_SAFE
+- CLR_SAFE opcode = 0x52
+- CLR_SAFE argument = current SAFE_LATCH from HK
+- successful uplink must increment the last accepted TC counter
+- if auth rollover trips, relay will sit in safe until a valid CLR_SAFE is accepted
+- ignore HK_RADIO unless RF asks for it

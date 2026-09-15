@@ -1,0 +1,834 @@
+(() => {
+  "use strict";
+
+  const DATA_OFFSET = 0x1200;
+  const STATE_OFFSET = 0x1280;
+  const FLAG_OUT_OFFSET = 0x2000;
+  const FLAG_LEN = __FLAG_LEN__;
+  const SENTINEL_ADDR = 0xffff;
+  const SEED_VALUE = 0x4e534300;
+  const MOSQUITO_COUNT = 40;
+  const MOSQUITO_SHEET_COLUMNS = 6;
+  const MOSQUITO_SPRITE_SRC = "assets/mozz_arch.png";
+  const FLYSWATTER_SRC = "assets/flyswatter.png";
+  const MOSQUITO_LOOP_SRC = "audio/Mosquito%20Sound%20Effect%20.mp3";
+  const HIT_SOUND_SRC = "audio/fly-swatter.mp3";
+  const FPS = 60;
+  const DEBUG_MODE = false;
+
+  window.DEBUG_MODE = DEBUG_MODE;
+  sessionStorage.setItem("seed", "0x4E534300");
+
+  const canvas = document.getElementById("game");
+  const ctx = canvas.getContext("2d");
+  const scoreEl = document.getElementById("score");
+  const boardScoreEl = document.getElementById("board-score");
+  const badgeEl = document.getElementById("badge");
+  const stateEl = document.getElementById("exec-state");
+  const messageEl = document.getElementById("message");
+  const modal = document.getElementById("modal");
+  const modalTitle = document.getElementById("modal-title");
+  const modalText = document.getElementById("modal-text");
+  const modalButton = document.getElementById("modal-button");
+  const pausePanel = document.getElementById("pause-panel");
+  const terminal = document.getElementById("terminal");
+  const submitScore = document.getElementById("submit-score");
+
+  const sprite = new Image();
+  const swatterImage = new Image();
+  let spriteSheet = null;
+  let swatterSheet = null;
+
+  sprite.onload = () => {
+    spriteSheet = makeTransparentCopy(sprite);
+  };
+  swatterImage.onload = () => {
+    swatterSheet = makeTransparentCopy(swatterImage);
+  };
+  sprite.src = MOSQUITO_SPRITE_SRC;
+  swatterImage.src = FLYSWATTER_SRC;
+
+  const mosquitoLoop = new Audio(MOSQUITO_LOOP_SRC);
+  mosquitoLoop.loop = true;
+  mosquitoLoop.preload = "auto";
+  mosquitoLoop.volume = 0.72;
+  mosquitoLoop.playbackRate = 1.05;
+
+  const hitSounds = Array.from({ length: 4 }, () => {
+    const audio = new Audio(HIT_SOUND_SRC);
+    audio.preload = "auto";
+    audio.volume = 0.9;
+    return audio;
+  });
+  let hitSoundCursor = 0;
+
+  const palette = [
+    "#d93d4a",
+    "#f2a51a",
+    "#1fa187",
+    "#2d6cdf",
+    "#7cc84a",
+    "#e05a2a",
+    "#24b4c8",
+    "#b65acb",
+  ];
+
+  const actionNames = ["hover", "kill", "spare"];
+  const milestoneMessages = new Map([
+    [10, "Warm up complete."],
+    [25, "The pattern is forming."],
+    [50, "Impressive. But the room isn't clear."],
+    [100, "You're killing the wrong ones."],
+    [200, "New High Score!"],
+  ]);
+
+  let wasm;
+  let memory8;
+  let memory32;
+  let mosquitoes = [];
+  let frame = 0;
+  let running = true;
+  let fakeShown = false;
+  let highScoreShown = false;
+  let revealed = false;
+  let revealFrame = 0;
+  let terminalText = "";
+  let terminalCursor = 0;
+  let lastTime = performance.now();
+  let audioCtx = null;
+  let masterGain = null;
+  let lastScore = 0;
+  let pendingMessageUntil = 0;
+  let swat = {
+    active: false,
+    x: 0,
+    y: 0,
+    startFrame: 0,
+  };
+
+  const mouse = {
+    x: -9999,
+    y: -9999,
+    down: false,
+  };
+
+  function lcg(seed) {
+    let value = seed >>> 0;
+    return () => {
+      value = (Math.imul(value, 1664525) + 1013904223) >>> 0;
+      return value / 0x100000000;
+    };
+  }
+
+  function makeTransparentCopy(image) {
+    const out = document.createElement("canvas");
+    out.width = image.naturalWidth || image.width;
+    out.height = image.naturalHeight || image.height;
+    const outCtx = out.getContext("2d", { willReadFrequently: true });
+    outCtx.drawImage(image, 0, 0);
+
+    const pixels = outCtx.getImageData(0, 0, out.width, out.height);
+    const data = pixels.data;
+    for (let i = 0; i < data.length; i += 4) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+      if (r > 238 && g > 238 && b > 238) {
+        data[i + 3] = 0;
+      }
+    }
+    outCtx.putImageData(pixels, 0, 0);
+    return out;
+  }
+
+  function resize() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const rect = canvas.getBoundingClientRect();
+    canvas.width = Math.max(640, Math.floor(rect.width * dpr));
+    canvas.height = Math.max(420, Math.floor(rect.height * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+  }
+
+  function canvasPoint(event) {
+    const rect = canvas.getBoundingClientRect();
+    return {
+      x: event.clientX - rect.left,
+      y: event.clientY - rect.top,
+    };
+  }
+
+  function readTable() {
+    return new Uint32Array(wasm.memory.buffer, DATA_OFFSET, MOSQUITO_COUNT);
+  }
+
+  function decodeWord(id, word, rand) {
+    const meaningful = (word & 0x8000) !== 0;
+    const rd = (word >>> 8) & 7;
+    const op = (word >>> 11) & 3;
+    const action = (word >>> 13) & 3;
+    const imm = word & 0xff;
+    const hi = word >>> 16;
+    const baseNX = 0.08 + rand() * 0.84;
+    const baseNY = 0.1 + rand() * 0.8;
+
+    return {
+      id,
+      word,
+      meaningful,
+      rd,
+      op,
+      action,
+      imm,
+      hi,
+      baseNX,
+      baseNY,
+      phase: rand() * Math.PI * 2,
+      speed: 2.4 + rand() * 2.4,
+      radius: 60 + (imm % 120),
+      size: meaningful ? 54 : 42 + (id % 3) * 4,
+      hoverRadius: meaningful ? 30 : 26,
+      hovered: false,
+      clickedSinceHover: false,
+      hoverStartedAt: 0,
+      deadUntil: 0,
+      pinged: false,
+      x: 0,
+      y: 0,
+      splat: 0,
+    };
+  }
+
+  function buildSwarm() {
+    const rand = lcg(SEED_VALUE);
+    const table = readTable();
+    mosquitoes = [];
+    for (let id = 0; id < MOSQUITO_COUNT; id++) {
+      mosquitoes.push(decodeWord(id, table[id], rand));
+    }
+  }
+
+  function windowOpenFrame(id) {
+    switch (id) {
+      case 2:
+        return 180;
+      case 5:
+        return 420;
+      case 11:
+        return 780;
+      case 17:
+        return 1140;
+      case 23:
+        return 1500;
+      case 29:
+        return 1860;
+      case 34:
+        return 2220;
+      case 38:
+        return 2580;
+      default:
+        return -1;
+    }
+  }
+
+  function currentRegs() {
+    return new Uint8Array(wasm.memory.buffer, STATE_OFFSET, 8);
+  }
+
+  function wrapInto(value, min, max) {
+    const span = max - min;
+    return ((((value - min) % span) + span) % span) + min;
+  }
+
+  function updateMosquitoPosition(m, width, height) {
+    const t = frame / FPS;
+    const local = t * m.speed + m.phase;
+    const wallPad = 28;
+    const centerX = width * m.baseNX;
+    const centerY = height * m.baseNY;
+    const sweepX = Math.sin(t * (0.9 + m.speed * 0.18) + m.id) * width * 0.42;
+    const sweepY = Math.cos(t * (0.75 + m.speed * 0.16) + m.id * 1.7) * height * 0.36;
+    const spiral = m.radius * (0.7 + 0.3 * Math.sin(t * 3.2 + m.id * 0.3));
+
+    m.x = wrapInto(centerX + sweepX + Math.cos(local * 2.8) * spiral, wallPad, width - wallPad);
+    m.y = wrapInto(centerY + sweepY + Math.sin(local * 2.3) * spiral * 0.72, wallPad, height - wallPad);
+  }
+
+  function ensureAudio() {
+    mosquitoLoop.play().catch(() => {});
+
+    if (audioCtx) {
+      if (audioCtx.state === "suspended") audioCtx.resume();
+      return;
+    }
+
+    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    masterGain = audioCtx.createGain();
+    masterGain.gain.value = 0.32;
+    masterGain.connect(audioCtx.destination);
+
+    mosquitoLoop.play().catch(() => {});
+  }
+
+  function tone(freq, seconds, gain = 0.05, type = "square") {
+    if (!audioCtx || !masterGain) return;
+    const osc = audioCtx.createOscillator();
+    const amp = audioCtx.createGain();
+    osc.type = type;
+    osc.frequency.value = freq;
+    amp.gain.setValueAtTime(gain, audioCtx.currentTime);
+    amp.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + seconds);
+    osc.connect(amp);
+    amp.connect(masterGain);
+    osc.start();
+    osc.stop(audioCtx.currentTime + seconds);
+  }
+
+  function buzzFor(m) {
+    if (!audioCtx) return;
+    const regs = currentRegs();
+    const raw = 220 * (regs[m.rd] + 1);
+    const freq = Math.max(120, Math.min(6200, raw));
+    tone(freq, 0.045, m.meaningful ? 0.06 : 0.024, "sawtooth");
+  }
+
+  function playSplat() {
+    const clip = hitSounds[hitSoundCursor++ % hitSounds.length];
+    clip.currentTime = 0;
+    clip.play().catch(() => {});
+    tone(94, 0.05, 0.07, "triangle");
+    tone(47, 0.08, 0.04, "sine");
+  }
+
+  function playPing() {
+    tone(880, 0.09, 0.05, "sine");
+  }
+
+  function playRevealTone() {
+    const letters = [392, 523.25, 659.25, 784, 1046.5, 880, 698.46, 587.33];
+    letters.forEach((freq, i) => {
+      window.setTimeout(() => tone(freq, 0.18, 0.04, "sine"), i * 140);
+    });
+  }
+
+  function showMessage(text, duration = 2200) {
+    messageEl.textContent = text;
+    pendingMessageUntil = performance.now() + duration;
+  }
+
+  function clearExpiredMessage() {
+    if (pendingMessageUntil && performance.now() > pendingMessageUntil) {
+      messageEl.textContent = "";
+      pendingMessageUntil = 0;
+    }
+  }
+
+  function updateScore() {
+    const score = wasm.get_score();
+    if (score !== lastScore) {
+      lastScore = score;
+      scoreEl.textContent = String(score).padStart(3, "0");
+      boardScoreEl.textContent = String(score).padStart(3, "0");
+      if (milestoneMessages.has(score)) {
+        showMessage(milestoneMessages.get(score), score === 100 ? 4200 : 2400);
+      }
+      if (score >= 200 && !highScoreShown) {
+        highScoreShown = true;
+        openModal("New High Score!", "You've mastered the surface. The swarm remembers differently.");
+      }
+    }
+  }
+
+  function openModal(title, text) {
+    modalTitle.textContent = title;
+    modalText.textContent = text;
+    modal.hidden = false;
+  }
+
+  function closeModal() {
+    modal.hidden = true;
+  }
+
+  function handleWasmReturn(value) {
+    if ((value & 0xff00) === 0x5100) {
+      const step = value & 0xff;
+      stateEl.textContent = `EXEC ${String(step).padStart(2, "0")}`;
+    }
+    if (value === 0xb700 || memory8[SENTINEL_ADDR] === 0xb7) {
+      beginReveal();
+    }
+  }
+
+  function startSwat(x, y) {
+    swat = {
+      active: true,
+      x,
+      y,
+      startFrame: frame,
+    };
+  }
+
+  function maybeFakeWin() {
+    if (!fakeShown && wasm.check_win()) {
+      fakeShown = true;
+      badgeEl.textContent = "Room Clear";
+      stateEl.textContent = "IDLE";
+      openModal("Room Clear Badge", "Eliminated: 50 | Remaining: ? | Execution state: IDLE");
+    }
+  }
+
+  function beginReveal() {
+    if (revealed) return;
+    revealed = true;
+    revealFrame = frame;
+    running = true;
+    closeModal();
+    playRevealTone();
+
+    const chars = [];
+    for (let i = 0; i < FLAG_LEN; i++) {
+      chars.push(String.fromCharCode(memory8[FLAG_OUT_OFFSET + i]));
+    }
+    const flag = chars.join("");
+    terminalText = [
+      "> MOZZARELLA MACHINE - EXECUTION COMPLETE",
+      "> FINAL STATE: AD DE BE EF 13 37 CA FE",
+      "> PROTOCOL VERIFIED",
+      `> FLAG: ${flag}`,
+    ].join("\n");
+    terminalCursor = 0;
+    terminal.textContent = "";
+    terminal.hidden = false;
+    badgeEl.textContent = "Protocol Verified";
+    stateEl.textContent = "DONE";
+  }
+
+  function updateRevealText() {
+    if (!revealed) return;
+    const age = frame - revealFrame;
+    if (age < 300) return;
+    terminalCursor = Math.min(terminalText.length, terminalCursor + 2);
+    terminal.textContent = terminalText.slice(0, terminalCursor) + (Math.floor(frame / 18) % 2 ? "_" : "");
+  }
+
+  function handleHoverTransitions() {
+    if (revealed) return;
+    for (const m of mosquitoes) {
+      if (frame < m.deadUntil) continue;
+      const dx = mouse.x - m.x;
+      const dy = mouse.y - m.y;
+      const inside = Math.hypot(dx, dy) <= m.hoverRadius;
+
+      if (inside && !m.hovered) {
+        m.hovered = true;
+        m.clickedSinceHover = false;
+        m.hoverStartedAt = frame;
+        const result = wasm.on_hover(m.id);
+        buzzFor(m);
+        if (result === 0x880) playPing();
+      }
+
+      if (!inside && m.hovered) {
+        m.hovered = false;
+        if (!m.clickedSinceHover && frame - m.hoverStartedAt > 4) {
+          const result = wasm.on_miss(m.id);
+          handleWasmReturn(result);
+        }
+      }
+    }
+  }
+
+  function handleClick(event) {
+    ensureAudio();
+    const point = canvasPoint(event);
+    mouse.x = point.x;
+    mouse.y = point.y;
+
+    let selected = null;
+    let selectedDistance = Infinity;
+    for (const m of mosquitoes) {
+      if (frame < m.deadUntil) continue;
+      const distance = Math.hypot(mouse.x - m.x, mouse.y - m.y);
+      if (distance <= m.hoverRadius && distance < selectedDistance) {
+        selected = m;
+        selectedDistance = distance;
+      }
+    }
+
+    if (!selected) {
+      tone(180, 0.04, 0.018, "square");
+      return;
+    }
+
+    selected.clickedSinceHover = true;
+    selected.hovered = false;
+    selected.deadUntil = frame + 82;
+    selected.splat = 1;
+    startSwat(point.x, point.y);
+    const result = wasm.on_click(selected.id);
+    playSplat();
+    updateScore();
+    handleWasmReturn(result);
+  }
+
+  function drawWallpaper(width, height) {
+    ctx.fillStyle = "#16191f";
+    ctx.fillRect(0, 0, width, height);
+
+    const seedBits = "01001110010100110100001100000000";
+    for (let y = 0; y < height; y += 8) {
+      for (let x = 0; x < width; x += 8) {
+        const bit = seedBits[(Math.floor(x / 8) + Math.floor(y / 8)) % seedBits.length];
+        ctx.fillStyle = bit === "1" ? "rgba(40, 83, 110, 0.28)" : "rgba(31, 38, 46, 0.5)";
+        ctx.fillRect(x, y, 7, 7);
+      }
+    }
+
+    ctx.strokeStyle = "rgba(255,255,255,0.05)";
+    ctx.lineWidth = 1;
+    for (let x = 0; x < width; x += 48) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, height);
+      ctx.stroke();
+    }
+  }
+
+  function drawMosquito(m) {
+    if (frame < m.deadUntil) {
+      const fade = (m.deadUntil - frame) / 82;
+      ctx.save();
+      ctx.globalAlpha = Math.max(0, fade);
+      ctx.translate(m.x, m.y);
+      ctx.fillStyle = "#941d2c";
+      for (let i = 0; i < 7; i++) {
+        const a = (Math.PI * 2 * i) / 7 + frame * 0.04;
+        ctx.fillRect(Math.cos(a) * 8 - 2, Math.sin(a) * 5 - 2, 4, 4);
+      }
+      ctx.restore();
+      return;
+    }
+
+    if (spriteSheet) {
+      const frameWidth = spriteSheet.width / MOSQUITO_SHEET_COLUMNS;
+      const frameHeight = spriteSheet.height;
+      const spriteIndex = m.id === 33 ? MOSQUITO_SHEET_COLUMNS - 1 : m.rd % MOSQUITO_SHEET_COLUMNS;
+      const pulse = m.hovered ? 1.15 : 1;
+      const drawW = m.size * pulse;
+      const drawH = drawW * (frameHeight / frameWidth);
+
+      ctx.save();
+      ctx.translate(m.x, m.y);
+      ctx.rotate(Math.sin(frame * 0.035 + m.phase) * 0.32);
+      ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
+      ctx.shadowBlur = 6;
+      ctx.shadowOffsetX = 2;
+      ctx.shadowOffsetY = 3;
+      ctx.drawImage(
+        spriteSheet,
+        spriteIndex * frameWidth,
+        0,
+        frameWidth,
+        frameHeight,
+        -drawW / 2,
+        -drawH / 2,
+        drawW,
+        drawH
+      );
+      ctx.shadowColor = "transparent";
+
+      if (m.meaningful) {
+        ctx.fillStyle = "#ffffff";
+        ctx.strokeStyle = "#15191f";
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        ctx.arc(drawW * 0.11, drawH * 0.03, 2.1, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.fill();
+      }
+
+      if (m.hovered) {
+        ctx.strokeStyle = m.action === 2 ? "rgba(88, 214, 141, 0.85)" : "rgba(255, 214, 102, 0.8)";
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(0, 0, m.hoverRadius + 3, 0, Math.PI * 2);
+        ctx.stroke();
+      }
+
+      ctx.restore();
+      return;
+    }
+
+    const color = palette[m.rd];
+    const flap = Math.sin(frame * 0.38 + m.phase) * 4;
+    const specialWing = m.id === 33;
+    const scale = m.hovered ? 1.18 : 1;
+    const body = m.size * scale;
+
+    ctx.save();
+    ctx.translate(m.x, m.y);
+    ctx.rotate(Math.sin(frame * 0.035 + m.phase) * 0.35);
+
+    ctx.fillStyle = specialWing ? "rgba(255,255,255,0.42)" : "rgba(185,224,255,0.34)";
+    ctx.beginPath();
+    ctx.ellipse(-body * 0.3, -body * 0.25 - flap, body * 0.6, body * 0.28, -0.6, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(body * 0.3, -body * 0.25 + flap, body * 0.6, body * 0.28, 0.6, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#242a32";
+    ctx.lineWidth = 1;
+    for (let i = -1; i <= 1; i++) {
+      ctx.beginPath();
+      ctx.moveTo(-body * 0.25, 0);
+      ctx.lineTo(-body * 0.8, i * body * 0.34);
+      ctx.moveTo(body * 0.25, 0);
+      ctx.lineTo(body * 0.8, i * body * 0.34);
+      ctx.stroke();
+    }
+
+    ctx.fillStyle = color;
+    ctx.beginPath();
+    ctx.ellipse(0, 0, body * 0.42, body * 0.62, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.fillStyle = "#222832";
+    ctx.beginPath();
+    ctx.ellipse(0, -body * 0.56, body * 0.28, body * 0.25, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.strokeStyle = "#f1d188";
+    ctx.beginPath();
+    ctx.moveTo(0, -body * 0.72);
+    ctx.lineTo(0, -body * 1.35);
+    ctx.stroke();
+
+    if (m.meaningful) {
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(Math.round(body * 0.1), Math.round(body * 0.08), 1.5, 1.5);
+    }
+
+    if (m.hovered) {
+      ctx.strokeStyle = m.action === 2 ? "rgba(88, 214, 141, 0.8)" : "rgba(255, 214, 102, 0.75)";
+      ctx.beginPath();
+      ctx.arc(0, 0, m.hoverRadius + 2, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.restore();
+  }
+
+  function drawSwatter() {
+    if (!swat.active || !swatterSheet) return;
+
+    const age = frame - swat.startFrame;
+    if (age > 22) {
+      swat.active = false;
+      return;
+    }
+
+    const progress = Math.max(0, Math.min(1, age / 22));
+    const ease = 1 - Math.pow(1 - progress, 3);
+    const rect = canvas.getBoundingClientRect();
+    const drawW = Math.max(120, Math.min(190, rect.width * 0.16));
+    const drawH = drawW * (swatterSheet.height / swatterSheet.width);
+    const angle = -0.95 + ease * 0.55;
+    const squash = 1 - Math.sin(progress * Math.PI) * 0.08;
+
+    ctx.save();
+    ctx.translate(swat.x, swat.y);
+    ctx.rotate(angle);
+    ctx.scale(1, squash);
+    ctx.globalAlpha = progress < 0.9 ? 1 : (1 - progress) * 10;
+    ctx.shadowColor = "rgba(0, 0, 0, 0.45)";
+    ctx.shadowBlur = 12;
+    ctx.shadowOffsetX = 4;
+    ctx.shadowOffsetY = 5;
+    ctx.drawImage(swatterSheet, -drawW * 0.62, -drawH * 0.31, drawW, drawH);
+    ctx.restore();
+  }
+
+  function drawDebug(width) {
+    if (!window.DEBUG_MODE) return;
+    ctx.save();
+    ctx.fillStyle = "rgba(0,0,0,0.65)";
+    ctx.fillRect(12, 12, 212, 70);
+    ctx.fillStyle = "#8df58d";
+    ctx.font = "12px RegisterMono, monospace";
+    ctx.fillText(`frame ${String(frame).padStart(5, "0")}`, 24, 34);
+    ctx.fillText(`seed  0x${SEED_VALUE.toString(16).toUpperCase()}`, 24, 52);
+    ctx.fillText(`score ${String(wasm.get_score()).padStart(3, "0")}`, 24, 70);
+    ctx.fillText(`${width}`, -9999, -9999);
+    ctx.restore();
+  }
+
+  function drawDotText(text, x, y, scale) {
+    ctx.save();
+    ctx.font = `${scale * 7}px RegisterMono, monospace`;
+    ctx.textBaseline = "top";
+    ctx.fillStyle = "rgba(87, 255, 128, 0.12)";
+    ctx.fillText(text, x + 2, y + 2);
+    ctx.fillStyle = "#69ff8c";
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
+  function drawReveal(width, height) {
+    ctx.fillStyle = "#030604";
+    ctx.fillRect(0, 0, width, height);
+
+    const regs = "AD DE BE EF 13 37 CA FE";
+    ctx.font = "13px RegisterMono, monospace";
+    for (let y = 0; y < height; y += 18) {
+      for (let x = 0; x < width; x += 104) {
+        ctx.fillStyle = "rgba(54, 255, 111, 0.08)";
+        ctx.fillText(regs[(x / 104 + y / 18) % regs.length] || "0", x, y);
+      }
+    }
+
+    const age = frame - revealFrame;
+    if (age > 60) {
+      drawDotText("ADDE BEEF", Math.max(24, width * 0.12), height * 0.2, Math.max(3, width / 230));
+      drawDotText("1337 CAFE", Math.max(24, width * 0.12), height * 0.36, Math.max(3, width / 230));
+    }
+
+    const cx = width * 0.74;
+    const cy = height * 0.48;
+    for (let i = 0; i < 24; i++) {
+      const a = frame * 0.025 + (Math.PI * 2 * i) / 24;
+      const r = 92 + Math.sin(frame * 0.03 + i) * 22;
+      const x = cx + Math.cos(a) * r;
+      const y = cy + Math.sin(a) * r * 0.72;
+      ctx.fillStyle = palette[i % palette.length];
+      ctx.fillRect(x, y, 4, 4);
+    }
+  }
+
+  function render() {
+    const rect = canvas.getBoundingClientRect();
+    const width = rect.width;
+    const height = rect.height;
+
+    if (revealed) {
+      drawReveal(width, height);
+      return;
+    }
+
+    drawWallpaper(width, height);
+    for (const m of mosquitoes) {
+      updateMosquitoPosition(m, width, height);
+      drawMosquito(m);
+    }
+    drawSwatter();
+
+    ctx.save();
+    ctx.fillStyle = "rgba(255,255,255,0.16)";
+    ctx.font = "11px RegisterMono, monospace";
+    ctx.fillText("BUZZK1LL VECTOR-CONTROL SIMULATION", 18, height - 22);
+    ctx.restore();
+
+    drawDebug(width);
+  }
+
+  function update() {
+    if (!wasm) return;
+
+    if (running || revealed) {
+      frame = wasm.tick();
+    }
+
+    if (!revealed) {
+      for (const m of mosquitoes) {
+        const open = windowOpenFrame(m.id);
+        if (open > 0 && !m.pinged && frame >= open - 30) {
+          m.pinged = true;
+          playPing();
+        }
+      }
+      handleHoverTransitions();
+      updateScore();
+      maybeFakeWin();
+      clearExpiredMessage();
+      if (memory8[SENTINEL_ADDR] === 0xb7) beginReveal();
+    } else {
+      updateRevealText();
+    }
+  }
+
+  function loop(now) {
+    const elapsed = now - lastTime;
+    if (elapsed >= 1000 / FPS) {
+      lastTime = now - (elapsed % (1000 / FPS));
+      update();
+      render();
+    }
+    requestAnimationFrame(loop);
+  }
+
+  async function submitLeaderboard() {
+    try {
+      await fetch("/leaderboard", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ score: wasm.get_score(), seed: sessionStorage.getItem("seed") }),
+      });
+      showMessage("Score submitted.");
+    } catch {
+      showMessage("Leaderboard offline.");
+    }
+  }
+
+  async function init() {
+    resize();
+    mosquitoLoop.play().catch(() => {});
+    const response = await fetch("game.wasm");
+    const bytes = await response.arrayBuffer();
+    const { instance } = await WebAssembly.instantiate(bytes, {});
+    wasm = instance.exports;
+    wasm.reset_machine();
+    memory8 = new Uint8Array(wasm.memory.buffer);
+    memory32 = new Uint32Array(wasm.memory.buffer);
+    if (memory32[DATA_OFFSET >>> 2] !== 0x3f810311) {
+      throw new Error("MOZZ table offset mismatch");
+    }
+    buildSwarm();
+    scoreEl.textContent = "000";
+    badgeEl.textContent = "Room Clear locked";
+    stateEl.textContent = "IDLE";
+    requestAnimationFrame(loop);
+  }
+
+  window.addEventListener("resize", resize);
+  canvas.addEventListener("pointermove", (event) => {
+    const point = canvasPoint(event);
+    mouse.x = point.x;
+    mouse.y = point.y;
+    ensureAudio();
+  });
+  canvas.addEventListener("pointerleave", () => {
+    mouse.x = -9999;
+    mouse.y = -9999;
+  });
+  canvas.addEventListener("pointerdown", (event) => {
+    event.preventDefault();
+    handleClick(event);
+  });
+
+  window.addEventListener("keydown", (event) => {
+    if (event.key === "Escape" || event.key === " ") {
+      running = !running;
+      pausePanel.hidden = running;
+    }
+    if (revealed) updateRevealText();
+  });
+
+  modalButton.addEventListener("click", closeModal);
+  submitScore.addEventListener("click", submitLeaderboard);
+
+  init().catch((error) => {
+    console.error(error);
+    openModal("Loader Error", "The simulation failed to load game.wasm. Serve this folder over HTTP.");
+  });
+})();
