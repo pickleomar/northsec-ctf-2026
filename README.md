@@ -856,18 +856,18 @@ nsec@archive:~$ cat /archive/hall-of-fame
 
 | RANK | OPERATIVE | DOSSIERS | DEPLOYMENTS |
 |:---:|:---|:---:|:---|
-| `01` | `Fairalien` | 10 | reverse · misc · dfir |
-| `02` | `afk-Yato` | 5 | pwn |
-| `03` | `Zh3gh05t` | 5 | crypto |
-| `04` | `BlackMy7h` | 3 | web · wasm |
-| `05` | `slamo` | 3 | reverse |
-| `06` | `HoXoN` | 2 | reverse |
-| `07` | `molzri3` | 2 | web |
-| `08` | `pickleomar` | 2 | web |
-| `09` | `BLD933` | 1 | pwn |
-| `10` | `Scriptmagum` | 1 | crypto |
-| `11` | `SDIKIYOUSRA` | 1 | dfir |
-| `12` | `Wiame5` | 1 | crypto |
+| `01` | [Fairalien](https://github.com/alaeddine03) | 10 | reverse · misc · dfir |
+| `02` | [afk-Yato](https://github.com/afk-Yato) | 5 | pwn |
+| `03` | [Zh3gh05t](https://github.com/Zh3gh05t) | 5 | crypto |
+| `04` | [BlackMy7h](https://github.com/BlackMy7h) | 3 | web · wasm |
+| `05` | [slamo](https://github.com/slamo) | 3 | reverse |
+| `06` | [HoXoN](https://github.com/HoXoN) | 2 | reverse |
+| `07` | [molzri3](https://github.com/molzri3) | 2 | web |
+| `08` | [pickleomar](https://github.com/pickleomar) | 2 | web |
+| `09` | [BLD933](https://github.com/BLD933) | 1 | pwn |
+| `10` | [Scriptmagum](https://github.com/Scriptmagum) | 1 | crypto |
+| `11` | [SDIKIYOUSRA](https://github.com/SDIKIYOUSRA) | 1 | dfir |
+| `12` | [Wiame5](https://github.com/Wiame5) | 1 | crypto |
 | `??` | `???` *(unattributed)* | 5 | web · misc |
 
 ---
