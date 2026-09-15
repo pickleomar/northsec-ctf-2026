@@ -888,23 +888,3 @@ man nsc-archive
 cd ./WEB/s0ng0k0 && docker compose up --build   # example — check the dossier for specifics
 ```
 
-**▸ SPOILER ETIQUETTE** — 🔒 writeups stay sealed behind collapsibles; 🔓 links declassify them. What you declassify is on you.
-
-**▸ REGENERATING THIS ARCHIVE** — this README is generated, never hand-edit it:
-
-```bash
-python3 scripts/build_readme.py          # rebuild README.md from scripts/TEMPLATE.md
-python3 scripts/build_readme.py --check  # verify every dossier is classified
-```
-
----
-
-<div align="center">
-
-<sub>archive synced 2026-09-15 02:15 UTC · 41 dossiers · 24 quals / 17 finals · 22 declassified writeups · 12 operatives</sub>
-
-<br>
-
-<sub>built with <code>scripts/build_readme.py</code> — light it up again anytime</sub>
-
-</div>
