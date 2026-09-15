@@ -157,23 +157,6 @@ A collection of the challenges released during NorthSec CTF 2026, including chal
 |  12  | [Wiame5](https://github.com/Wiame5)           |      1     | crypto                |
 |   —  | Unattributed                                  |      5     | web · misc            |
 
----
-
-# Repository Structure
-
-Each challenge is stored as a self-contained directory containing the files required to run or inspect it.
-
-```text
-CATEGORY/
-└── Challenge/
-    ├── challenge files
-    ├── Dockerfile / docker-compose.yml
-    └── WRITEUP/
-        └── README.md
-```
-
-Challenge-specific instructions are provided inside the corresponding directory.
-
 ## Flag Format
 
 All flags follow the format:
@@ -188,12 +171,6 @@ Some challenges use a local `flag.txt` placeholder, while others generate flags 
 
 Most networked challenges include their own infrastructure. Refer to the challenge directory for the exact setup instructions.
 
-```bash
-cd ./WEB/s0ng0k0
-docker compose up --build
-```
-
----
 
 ## Archive Notes
 
