@@ -860,8 +860,8 @@ nsec@archive:~$ cat /archive/hall-of-fame
 | `02` | [afk-Yato](https://github.com/afk-Yato) | 5 | pwn |
 | `03` | [Zh3gh05t](https://github.com/Zh3gh05t) | 5 | crypto |
 | `04` | [BlackMy7h](https://github.com/BlackMy7h) | 3 | web · wasm |
-| `05` | [slamo](https://github.com/slamo) | 3 | reverse |
-| `06` | [HoXoN](https://github.com/HoXoN) | 2 | reverse |
+| `05` | [slamo](https://github.com/slamo1566) | 3 | reverse |
+| `06` | [HoXoN](https://github.com/hassanbencheikh) | 2 | reverse |
 | `07` | [molzri3](https://github.com/molzri3) | 2 | web |
 | `08` | [pickleomar](https://github.com/pickleomar) | 2 | web |
 | `09` | [BLD933](https://github.com/BLD933) | 1 | pwn |
