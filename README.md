@@ -6,10 +6,8 @@
 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
 ```
 
-[![Published challenges](https://img.shields.io/badge/challenges-41-00e676?style=flat-square\&labelColor=0d1117)](#statistics)
-[![Qualifications](https://img.shields.io/badge/qualifications-24-69f0ae?style=flat-square\&labelColor=0d1117)](#qualifications)
-[![Finals](https://img.shields.io/badge/finals-17-ff5252?style=flat-square\&labelColor=0d1117)](#finals)
-[![Categories](https://img.shields.io/badge/categories-7-40c4ff?style=flat-square\&labelColor=0d1117)](#statistics)
+[![Published challenges](https://img.shields.io/badge/challenges-41-00e676?style=flat-square\&labelColor=0d1117)]
+[![Categories](https://img.shields.io/badge/categories-7-40c4ff?style=flat-square\&labelColor=0d1117)
 [![Authors](https://img.shields.io/badge/authors-12-e040fb?style=flat-square\&labelColor=0d1117)](#authors)
 [![Flag format](https://img.shields.io/badge/flag%20format-NSC%7B...%7D-ffd740?style=flat-square\&labelColor=0d1117)](#repository-structure)
 
@@ -23,119 +21,8 @@ A collection of the challenges released during NorthSec CTF 2026, including chal
 
 ## Contents
 
-* [Qualifications](#qualifications)
-* [Finals](#finals)
 * [Authors](#authors)
 * [Repository Structure](#repository-structure)
-
----
-
-# Qualifications
-
-24 challenges across 6 categories.
-
-## CRYPTO
-
-| Challenge                                               | Author                                  | Difficulty |                            Writeup                            |
-| :------------------------------------------------------ | :-------------------------------------- | :--------: | :-----------------------------------------------------------: |
-| [KRASNYKANAL](./CRYPTO/KRASNYKANAL)                     | [Zh3gh05t](https://github.com/Zh3gh05t) |  `medium`  |       [Writeup](./CRYPTO/KRASNYKANAL/WRITEUP/README.md)       |
-| [ShinraTensei](./CRYPTO/ShinraTensei)                   | [Zh3gh05t](https://github.com/Zh3gh05t) |   `easy`   |       [Writeup](./CRYPTO/ShinraTensei/WRITEUP/README.md)      |
-| [Structures](./CRYPTO/Structures)                       | [Zh3gh05t](https://github.com/Zh3gh05t) |   `easy`   |        [Writeup](./CRYPTO/Structures/WRITEUP/README.md)       |
-| [The Enigmatic Vault](./CRYPTO/The%20Enigmatic%20Vault) | [Wiame5](https://github.com/Wiame5)     |  `medium`  | [Writeup](./CRYPTO/The%20Enigmatic%20Vault/WRITEUP/README.md) |
-
-<details>
-<summary><b>KRASNYKANAL</b> · Zh3gh05t · medium</summary>
-
-**Description**
-
-> You intercept a Russian communication channel. Putin has issued an ultimatum. Can you uncover the message before it sparks war?
-
-**Files**
-
-* [Challenge](./CRYPTO/KRASNYKANAL)
-* [Writeup](./CRYPTO/KRASNYKANAL/WRITEUP/README.md)
-
-</details>
-
-<details>
-<summary><b>ShinraTensei</b> · Zh3gh05t · easy</summary>
-
-**Description**
-
-> someone should love pain to predict the future.
-
-**Files**
-
-* [Challenge](./CRYPTO/ShinraTensei)
-* [Writeup](./CRYPTO/ShinraTensei/WRITEUP/README.md)
-
-</details>
-
-<details>
-<summary><b>Structures</b> · Zh3gh05t · easy</summary>
-
-**Description**
-
-> Alien has a message for us
-
-**Files**
-
-* [Challenge](./CRYPTO/Structures)
-* [Writeup](./CRYPTO/Structures/WRITEUP/README.md)
-
-</details>
-
-<details>
-<summary><b>The Enigmatic Vault</b> · Wiame5 · medium</summary>
-
-**Description**
-
-> You've intercepted an encrypted message from a mysterious organization. Intelligence suggests they use multiple layers of encryption to protect their secrets. Your mission: decrypt the message and find the flag.
-
-**Files**
-
-* [Challenge](./CRYPTO/The%20Enigmatic%20Vault)
-* [Writeup](./CRYPTO/The%20Enigmatic%20Vault/WRITEUP/README.md)
-
-</details>
-
----
-
-## PWN
-
-| Challenge                                                | Author                                  | Difficulty |                              Writeup                             |
-| :------------------------------------------------------- | :-------------------------------------- | :--------: | :--------------------------------------------------------------: |
-| [Archivist’s Ritual](./PWN/Archivist%E2%80%99s%20Ritual) | [afk-Yato](https://github.com/afk-Yato) |    `n/a`   | [Writeup](./PWN/Archivist%E2%80%99s%20Ritual/WRITEUP/writeup.md) |
-| [ksh](./PWN/ksh)                                         | [BLD933](https://github.com/BLD933)     |    `n/a`   |              [Writeup](./PWN/ksh/WRITEUP/writeup.md)             |
-| [necro-game](./PWN/necro-game)                           | [afk-Yato](https://github.com/afk-Yato) |    `n/a`   |          [Writeup](./PWN/necro-game/WRITEUP/writeup.md)          |
-
-<details>
-<summary><b>Archivist’s Ritual</b> · afk-Yato</summary>
-
-**Description**
-
-> The Archivist guards ancient knowledge through a strange interface of rituals and channels. Scrolls may be summoned, channels may be sealed, and the oracle may whisper truths… or lies.
-
-**Files**
-
-* [Challenge](./PWN/Archivist%E2%80%99s%20Ritual)
-* [Writeup](./PWN/Archivist%E2%80%99s%20Ritual/WRITEUP/writeup.md)
-
-</details>
-
----
-
-# Finals
-
-17 challenges across 7 categories.
-
-## CRYPTO
-
-| Challenge                   | Author                                        | Difficulty | Writeup |
-| :-------------------------- | :-------------------------------------------- | :--------: | :-----: |
-| [GATOUZZ](./CRYPTO/GATOUZZ) | [Zh3gh05t](https://github.com/Zh3gh05t)       |  `medium`  |    —    |
-| [TOTL](./CRYPTO/TOTL)       | [Zh3gh05t](https://github.com/Zh3gh05t)       |   `easy`   |    —    |
-| [TRAVEL](./CRYPTO/TRAVEL)   | [Scriptmagum](https://github.com/Scriptmagum) |   `hard`   |    —    |
 
 ---
 
