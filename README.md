@@ -6,7 +6,7 @@
 ▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
 ```
 
-[![challenges](https://img.shields.io/badge/challenges-41-00e676?style=flat-square&labelColor=0d1117)](#02-navigation) [![qualifications](https://img.shields.io/badge/qualifications-24-69f0ae?style=flat-square&labelColor=0d1117)](#02-navigation) [![finals](https://img.shields.io/badge/finals-17-ff5252?style=flat-square&labelColor=0d1117)](#02-navigation) [![categories](https://img.shields.io/badge/categories-7-40c4ff?style=flat-square&labelColor=0d1117)](#02-navigation) [![operatives](https://img.shields.io/badge/operatives-12-e040fb?style=flat-square&labelColor=0d1117)](#02-navigation) [![flag format](https://img.shields.io/badge/flag%20format-NSC%7B...%7D-ffd740?style=flat-square&labelColor=0d1117)](#02-navigation)
+[![Published challenges](https://img.shields.io/badge/challenges-41-00e676?style=flat-square&labelColor=0d1117)](#02-navigation) [![qualifications](https://img.shields.io/badge/qualifications-24-69f0ae?style=flat-square&labelColor=0d1117)](#02-navigation) [![finals](https://img.shields.io/badge/finals-17-ff5252?style=flat-square&labelColor=0d1117)](#02-navigation) [![categories](https://img.shields.io/badge/categories-7-40c4ff?style=flat-square&labelColor=0d1117)](#02-navigation) [![operatives](https://img.shields.io/badge/operatives-12-e040fb?style=flat-square&labelColor=0d1117)](#02-navigation) [![flag format](https://img.shields.io/badge/flag%20format-NSC%7B...%7D-ffd740?style=flat-square&labelColor=0d1117)](#02-navigation)
 
 **NORTHSEC CTF 2026 · THE OFFICIAL CHALLENGE ARCHIVE**
 
