@@ -25,7 +25,6 @@ A collection of the challenges released during NorthSec CTF 2026, including chal
 
 * [Qualifications](#qualifications)
 * [Finals](#finals)
-* [Statistics](#statistics)
 * [Authors](#authors)
 * [Repository Structure](#repository-structure)
 
@@ -137,46 +136,6 @@ A collection of the challenges released during NorthSec CTF 2026, including chal
 | [GATOUZZ](./CRYPTO/GATOUZZ) | [Zh3gh05t](https://github.com/Zh3gh05t)       |  `medium`  |    —    |
 | [TOTL](./CRYPTO/TOTL)       | [Zh3gh05t](https://github.com/Zh3gh05t)       |   `easy`   |    —    |
 | [TRAVEL](./CRYPTO/TRAVEL)   | [Scriptmagum](https://github.com/Scriptmagum) |   `hard`   |    —    |
-
----
-
-# Statistics
-
-## Challenges by Category
-
-```text
-WEB       10
-REVERSE    8
-CRYPTO     7
-PWN        6
-MISC       6
-DFIR       3
-WASM       1
-```
-
-## Challenges by Round
-
-```text
-Qualifications    24
-Finals            17
-Total             41
-```
-
-## Difficulty
-
-```text
-Easy       4
-Medium     4
-Med-Hard   1
-Hard       1
-N/A       31
-```
-
-## Writeup Coverage
-
-```text
-22 / 41 challenges · 54%
-```
 
 ---
 
