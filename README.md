@@ -10,9 +10,6 @@
 
 **NORTHSEC CTF 2026 · THE OFFICIAL CHALLENGE ARCHIVE**
 
-*Every dossier from the operation — the 🟢 qualifications and the 🔴 finals — sealed in one vault.*
-
-</div>
 
 > [!WARNING]
 > **SPOILER GUARD ACTIVE** — briefings are collapsed, writeups are classified, flags are redacted from this index. Expand at your own risk.
